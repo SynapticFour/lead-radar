@@ -4,15 +4,29 @@ _Generated 2026-07-12_
 Platforms without public APIs — review manually (~2 min):
 
 ## Upwork
-- [need help fixing vibe coded](https://www.upwork.com/nx/search/jobs/?q=need%20help%20fixing%20vibe%20coded)
-- [hire developer fix cursor](https://www.upwork.com/nx/search/jobs/?q=hire%20developer%20fix%20cursor)
-- [AI generated codebase rescue](https://www.upwork.com/nx/search/jobs/?q=AI%20generated%20codebase%20rescue)
-- [technical debt AI generated](https://www.upwork.com/nx/search/jobs/?q=technical%20debt%20AI%20generated)
-- [cursor broke my codebase](https://www.upwork.com/nx/search/jobs/?q=cursor%20broke%20my%20codebase)
-- [claude code wrote](https://www.upwork.com/nx/search/jobs/?q=claude%20code%20wrote)
-- [vibe coding technical debt](https://www.upwork.com/nx/search/jobs/?q=vibe%20coding%20technical%20debt)
-- [AI generated code nobody understands](https://www.upwork.com/nx/search/jobs/?q=AI%20generated%20code%20nobody%20understands)
-- [codebase unmaintainable](https://www.upwork.com/nx/search/jobs/?q=codebase%20unmaintainable)
+- [need help](https://www.upwork.com/nx/search/jobs/?q=need%20help)
+- [hire](https://www.upwork.com/nx/search/jobs/?q=hire)
+- [looking for a developer](https://www.upwork.com/nx/search/jobs/?q=looking%20for%20a%20developer)
+- [looking for developer](https://www.upwork.com/nx/search/jobs/?q=looking%20for%20developer)
+- [freelancer](https://www.upwork.com/nx/search/jobs/?q=freelancer)
+- [consultant](https://www.upwork.com/nx/search/jobs/?q=consultant)
+- [fix this](https://www.upwork.com/nx/search/jobs/?q=fix%20this)
+- [rescue](https://www.upwork.com/nx/search/jobs/?q=rescue)
+- [audit](https://www.upwork.com/nx/search/jobs/?q=audit)
+- [who can fix](https://www.upwork.com/nx/search/jobs/?q=who%20can%20fix)
+- [technical debt](https://www.upwork.com/nx/search/jobs/?q=technical%20debt)
+- [unmaintainable](https://www.upwork.com/nx/search/jobs/?q=unmaintainable)
+- [nobody understand](https://www.upwork.com/nx/search/jobs/?q=nobody%20understand)
+- [can't scale](https://www.upwork.com/nx/search/jobs/?q=can't%20scale)
+- [cant scale](https://www.upwork.com/nx/search/jobs/?q=cant%20scale)
+- [broke my](https://www.upwork.com/nx/search/jobs/?q=broke%20my)
+- [security issue](https://www.upwork.com/nx/search/jobs/?q=security%20issue)
+- [rewrite from scratch](https://www.upwork.com/nx/search/jobs/?q=rewrite%20from%20scratch)
+- [mess](https://www.upwork.com/nx/search/jobs/?q=mess)
+- [ai slop](https://www.upwork.com/nx/search/jobs/?q=ai%20slop)
+- [hallucinat](https://www.upwork.com/nx/search/jobs/?q=hallucinat)
+- [duplicate](https://www.upwork.com/nx/search/jobs/?q=duplicate)
+- [duplicated logic](https://www.upwork.com/nx/search/jobs/?q=duplicated%20logic)
 
 ## Fiverr Buyer Requests
 - [Search buyer requests](https://www.fiverr.com/users/your_username/buyer_requests) _(log in, search manually)_
@@ -23,15 +37,6 @@ Platforms without public APIs — review manually (~2 min):
 - [Replit Explore](https://replit.com/explore) — filter for recent web apps
 
 ## Suggested search terms
-- `need help fixing vibe coded`
-- `hire developer fix cursor`
-- `AI generated codebase rescue`
-- `technical debt AI generated`
-- `cursor broke my codebase`
-- `claude code wrote`
-- `vibe coding technical debt`
-- `AI generated code nobody understands`
-- `codebase unmaintainable`
 - `cursor`
 - `claude code`
 - `windsurf`
@@ -39,3 +44,28 @@ Platforms without public APIs — review manually (~2 min):
 - `bolt.new`
 - `replit agent`
 - `v0.dev`
+- `github copilot`
+- `vibe cod`
+- `technical debt`
+- `unmaintainable`
+- `nobody understand`
+- `can't scale`
+- `cant scale`
+- `broke my`
+- `security issue`
+- `rewrite from scratch`
+- `mess`
+- `ai slop`
+- `hallucinat`
+- `duplicate`
+- `duplicated logic`
+- `need help`
+- `hire`
+- `looking for a developer`
+- `looking for developer`
+- `freelancer`
+- `consultant`
+- `fix this`
+- `rescue`
+- `audit`
+- `who can fix`
