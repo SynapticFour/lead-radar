@@ -26,12 +26,18 @@ def _match(text, terms):
 
 def score_item(item, kw):
     text = item.get("text", "") or item.get("title", "")
-    reasons, score = [], 0
 
     tools = _match(text, kw["tools"])
     pain = _match(text, kw["pain"])
     intent = _match(text, kw["intent"])
 
+    categories_matched = sum(bool(x) for x in (tools, pain, intent))
+    if categories_matched < 2:
+        only = "tools" if tools else "pain" if pain else "intent" if intent else "none"
+        return 0, [f"below threshold: only '{only}' matched — needs 2+ of tools/pain/intent"]
+
+    score = 0
+    reasons = []
     if intent:
         score += 3
         reasons.append(f"intent: {intent[0]}")
@@ -39,12 +45,8 @@ def score_item(item, kw):
         score += 2
         reasons.append(f"pain: {pain[0]}")
     if tools:
-        score += 1 if (pain or intent) else 0
-        if pain or intent:
-            reasons.append(f"tool: {tools[0]}")
-    if tools and not pain and not intent:
-        score += 0
-        reasons.append(f"tool only (no pain/intent): {tools[0]}")
+        score += 1
+        reasons.append(f"tool: {tools[0]}")
 
     pts = item.get("points") or 0
     if item["source"] == "hn" and pts > 20:
