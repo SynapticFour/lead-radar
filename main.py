@@ -5,7 +5,6 @@ from pathlib import Path
 
 import requests
 
-from llm_triage import triage as llm_triage
 from scoring import load_keywords, score_item
 from sources import devto, github, hn, reddit
 from storage import init_db, is_seen, mark_seen, reset_recent
@@ -121,7 +120,7 @@ def print_debug(digest, raw):
             print(f"  [{i['score']}] {i['title'][:80]}  ({'; '.join(i['reasons'])})")
 
 
-def run(dry_run=False, debug=False, reset_days=None):
+def run(dry_run=False, debug=False, reset_days=None, triage_backend="none"):
     kw = load_keywords()
     init_db()
     if reset_days is not None:
@@ -130,7 +129,14 @@ def run(dry_run=False, debug=False, reset_days=None):
         print(f"[reset] cleared {n} entries from dedup ledger ({scope})")
     items = fetch_all(kw)
     digest, raw = process(items, kw, persist=not dry_run)
-    digest = llm_triage(digest)
+
+    if triage_backend == "local":
+        from local_triage import triage as run_triage
+        digest = run_triage(digest)
+    elif triage_backend == "anthropic":
+        from llm_triage import triage as run_triage
+        digest = run_triage(digest)
+
     if debug:
         print_debug(digest, raw)
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -159,8 +165,11 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true", help="Print score distribution and top near-misses")
     parser.add_argument(
         "--reset-days", type=int, default=None, metavar="N",
-        help="Clear dedup ledger entries from the last N days before running "
-             "(0 = clear the entire ledger) so those items can resurface and be re-scored.",
+        help="Clear dedup ledger entries from the last N days (0 = entire ledger) before running.",
+    )
+    parser.add_argument(
+        "--triage", choices=["none", "local", "anthropic"], default="none",
+        help="Optional LLM triage pass: 'local' (Ollama, free) or 'anthropic' (Claude API).",
     )
     args = parser.parse_args()
-    run(dry_run=args.dry_run, debug=args.debug, reset_days=args.reset_days)
+    run(dry_run=args.dry_run, debug=args.debug, reset_days=args.reset_days, triage_backend=args.triage)

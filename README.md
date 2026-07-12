@@ -55,7 +55,14 @@ In GitHub Actions, the workflow passes the built-in `${{ github.token }}` automa
 
 ### 4. LLM triage (optional)
 
-Set `ANTHROPIC_API_KEY` to enable a Claude Haiku pass on digest items only — filters semantic false positives (success stories, general discussion) that keyword scoring can't catch. Without it, numeric scoring is used as-is.
+Filter semantic false positives on digest items only (not all raw hits):
+
+```bash
+python main.py --triage anthropic   # Claude Haiku — requires ANTHROPIC_API_KEY
+python main.py --triage local       # Ollama — free, see "Local triage" below
+```
+
+Without `--triage`, numeric scoring is used as-is (default for GitHub Actions).
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
@@ -98,6 +105,26 @@ Edit `config/keywords.yaml` to tune search terms without touching code. Three ti
 - **tools** — AI tool mentions (+1 only when paired with pain or intent)
 
 Items scoring **3+** appear in the digest. Lower scores go to `raw/` for manual review.
+
+## Local triage (free, no API key)
+
+Requires [Ollama](https://ollama.com) running locally with a model pulled:
+
+```bash
+ollama pull qwen3:8b
+ollama serve   # if not already running as a service
+```
+
+Then:
+
+```bash
+make local-analysis        # full run with local triage
+make local-analysis-dry    # preview only, no writes
+```
+
+This runs entirely on your machine — nothing is sent to any external API.
+Swap the model by editing `MODEL` in `local_triage.py` if you have a larger
+model available and want to compare quality (e.g. `qwen3:14b`).
 
 ## Output
 
