@@ -127,8 +127,10 @@ def run(dry_run=False, debug=False, reset_days=None, triage_backend="none"):
         n = reset_recent(reset_days if reset_days > 0 else None)
         scope = "entire ledger" if reset_days == 0 else f"last {reset_days} day(s)"
         print(f"[reset] cleared {n} entries from dedup ledger ({scope})")
+    print("[fetch] querying sources...", flush=True)
     items = fetch_all(kw)
     digest, raw = process(items, kw, persist=not dry_run)
+    print(f"[score] {len(digest)} digest items, {len(raw)} below threshold", flush=True)
 
     if triage_backend == "local":
         from local_triage import triage as run_triage

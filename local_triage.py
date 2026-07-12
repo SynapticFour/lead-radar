@@ -21,7 +21,12 @@ Respond with strict JSON only, nothing else: {{"is_lead": true or false, "reason
 
 def triage(items):
     kept = []
-    for item in items:
+    total = len(items)
+    if total:
+        print(f"[triage] screening {total} digest items via Ollama ({MODEL})...", flush=True)
+    for i, item in enumerate(items, 1):
+        title = (item.get("title") or "")[:60]
+        print(f"[triage {i}/{total}] {title}", flush=True)
         text = (item.get("text") or item.get("title") or "")[:1500]
         try:
             r = requests.post(
@@ -48,4 +53,6 @@ def triage(items):
         if is_lead:
             item["reasons"].append(f"local llm confirmed: {item['llm_reason']}")
             kept.append(item)
+    if total:
+        print(f"[triage] done — {len(kept)}/{total} kept", flush=True)
     return kept
