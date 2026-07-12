@@ -16,7 +16,7 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python main.py
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_SEARCH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
           REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
