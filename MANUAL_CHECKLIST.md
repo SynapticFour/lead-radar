@@ -24,7 +24,8 @@ Platforms without public APIs — review manually (~2 min):
 - [rewrite from scratch](https://www.upwork.com/nx/search/jobs/?q=rewrite%20from%20scratch)
 - [mess](https://www.upwork.com/nx/search/jobs/?q=mess)
 - [ai slop](https://www.upwork.com/nx/search/jobs/?q=ai%20slop)
-- [hallucinat](https://www.upwork.com/nx/search/jobs/?q=hallucinat)
+- [hallucination](https://www.upwork.com/nx/search/jobs/?q=hallucination)
+- [hallucinated](https://www.upwork.com/nx/search/jobs/?q=hallucinated)
 - [duplicate](https://www.upwork.com/nx/search/jobs/?q=duplicate)
 - [duplicated logic](https://www.upwork.com/nx/search/jobs/?q=duplicated%20logic)
 
@@ -56,7 +57,8 @@ Platforms without public APIs — review manually (~2 min):
 - `rewrite from scratch`
 - `mess`
 - `ai slop`
-- `hallucinat`
+- `hallucination`
+- `hallucinated`
 - `duplicate`
 - `duplicated logic`
 - `need help`
