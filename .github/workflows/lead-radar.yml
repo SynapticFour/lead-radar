@@ -2,7 +2,16 @@ name: Lead Radar
 on:
   schedule:
     - cron: '0 13 * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      reset:
+        description: 'Ignore dedup ledger and re-evaluate recently-seen items'
+        type: boolean
+        default: false
+      reset_days:
+        description: 'How many days back to un-mark as seen (0 = clear entire ledger, re-evaluate everything ever seen)'
+        type: string
+        default: '1'
 permissions:
   contents: write
 jobs:
@@ -14,7 +23,13 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -r requirements.txt
-      - run: python main.py
+      - name: Run Lead Radar
+        run: |
+          ARGS=""
+          if [ "${{ github.event.inputs.reset }}" = "true" ]; then
+            ARGS="--reset-days ${{ github.event.inputs.reset_days || '1' }}"
+          fi
+          python main.py $ARGS
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
@@ -24,6 +39,6 @@ jobs:
         run: |
           git config user.name "lead-radar-bot"
           git config user.email "bot@localhost"
-          git add digests/ data/seen.db MANUAL_CHECKLIST.md
-          git commit -m "Daily digest $(date +%F)" || echo "nothing to commit"
+          git add digests/ data/seen.db raw/ MANUAL_CHECKLIST.md
+          git commit -m "Digest $(date +%F)$( [ '${{ github.event.inputs.reset }}' = 'true' ] && echo ' (reset run)' )" || echo "nothing to commit"
           git push

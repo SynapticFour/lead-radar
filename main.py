@@ -7,7 +7,7 @@ import requests
 
 from scoring import load_keywords, score_item
 from sources import github, hn, reddit
-from storage import init_db, is_seen, mark_seen
+from storage import init_db, is_seen, mark_seen, reset_recent
 
 ROOT = Path(__file__).parent
 DIGESTS = ROOT / "digests"
@@ -16,7 +16,7 @@ THRESHOLD = 3
 
 
 def all_keywords(kw):
-    return kw["high_intent"] + kw["pain_venting"] + kw["tool_mentions"]
+    return kw["tools"] + kw["pain"] + kw["intent"]
 
 
 def fetch_all(kw):
@@ -71,7 +71,7 @@ def write_manual_checklist(kw):
         "",
         "## Upwork",
     ]
-    for term in kw["high_intent"] + kw["pain_venting"]:
+    for term in kw["intent"] + kw["pain"]:
         t = term.replace(" ", "%20")
         lines.append(f"- [{term}](https://www.upwork.com/nx/search/jobs/?q={t})")
     lines += [
@@ -108,11 +108,28 @@ def send_webhook(digest):
         pass
 
 
-def run(dry_run=False):
+def print_debug(digest, raw):
+    from collections import Counter
+    dist = Counter(item["score"] for item in (digest + raw))
+    print(f"[debug] score distribution: {dict(sorted(dist.items()))}")
+    near_misses = sorted((i for i in raw if i["score"] == THRESHOLD - 1), key=lambda x: x["score"], reverse=True)[:10]
+    if near_misses:
+        print(f"[debug] top {len(near_misses)} near-misses (score {THRESHOLD - 1}):")
+        for i in near_misses:
+            print(f"  [{i['score']}] {i['title'][:80]}  ({'; '.join(i['reasons'])})")
+
+
+def run(dry_run=False, debug=False, reset_days=None):
     kw = load_keywords()
     init_db()
+    if reset_days is not None:
+        n = reset_recent(reset_days if reset_days > 0 else None)
+        scope = "entire ledger" if reset_days == 0 else f"last {reset_days} day(s)"
+        print(f"[reset] cleared {n} entries from dedup ledger ({scope})")
     items = fetch_all(kw)
     digest, raw = process(items, kw, persist=not dry_run)
+    if debug:
+        print_debug(digest, raw)
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     text = format_digest(digest, date)
 
@@ -136,4 +153,11 @@ def run(dry_run=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Lead Radar")
     parser.add_argument("--dry-run", action="store_true", help="Print digest to stdout, no writes")
-    run(dry_run=parser.parse_args().dry_run)
+    parser.add_argument("--debug", action="store_true", help="Print score distribution and top near-misses")
+    parser.add_argument(
+        "--reset-days", type=int, default=None, metavar="N",
+        help="Clear dedup ledger entries from the last N days before running "
+             "(0 = clear the entire ledger) so those items can resurface and be re-scored.",
+    )
+    args = parser.parse_args()
+    run(dry_run=args.dry_run, debug=args.debug, reset_days=args.reset_days)

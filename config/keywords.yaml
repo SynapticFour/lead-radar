@@ -1,16 +1,5 @@
 signals:
-  high_intent:
-    - "need help fixing vibe coded"
-    - "hire developer fix cursor"
-    - "AI generated codebase rescue"
-    - "technical debt AI generated"
-  pain_venting:
-    - "cursor broke my codebase"
-    - "claude code wrote"
-    - "vibe coding technical debt"
-    - "AI generated code nobody understands"
-    - "codebase unmaintainable"
-  tool_mentions:
+  tools:
     - "cursor"
     - "claude code"
     - "windsurf"
@@ -18,3 +7,30 @@ signals:
     - "bolt.new"
     - "replit agent"
     - "v0.dev"
+    - "github copilot"
+    - "vibe cod"
+  pain:
+    - "technical debt"
+    - "unmaintainable"
+    - "nobody understand"
+    - "can't scale"
+    - "cant scale"
+    - "broke my"
+    - "security issue"
+    - "rewrite from scratch"
+    - "mess"
+    - "ai slop"
+    - "hallucinat"
+    - "duplicate"
+    - "duplicated logic"
+  intent:
+    - "need help"
+    - "hire"
+    - "looking for a developer"
+    - "looking for developer"
+    - "freelancer"
+    - "consultant"
+    - "fix this"
+    - "rescue"
+    - "audit"
+    - "who can fix"

@@ -9,7 +9,7 @@ A low-maintenance monitoring tool that finds businesses struggling with AI-gener
 | Source | API | Signal strength |
 |--------|-----|-----------------|
 | Hacker News | [Algolia HN API](https://hn.algolia.com/) (free, no key) | Strong |
-| GitHub | [Search API](https://docs.github.com/en/rest/search) (optional token) | Weak |
+| GitHub | [Code Search API](https://docs.github.com/en/rest/search) (**requires** `GITHUB_TOKEN`) | Weak |
 | Reddit | [Official API](https://www.reddit.com/dev/api/) (OAuth2) | Strong |
 | Upwork / Fiverr | None — see `MANUAL_CHECKLIST.md` | Manual |
 
@@ -38,13 +38,17 @@ cp .env.example .env   # edit CONTACT_EMAIL at minimum
 
 Reddit is optional — the tool skips it silently if credentials are missing.
 
-### 3. GitHub token (optional, recommended)
+### 3. GitHub token (required for GitHub source)
 
-Create a [Personal Access Token](https://github.com/settings/tokens) with **`public_repo` scope only** (classic token) or fine-grained read access to public repos. Raises Search API rate limits from 10/min to 30/min.
+The GitHub source uses `/search/code`, which **has no unauthenticated access** — without `GITHUB_TOKEN`, GitHub is skipped entirely (like Reddit without credentials).
+
+Create a [Personal Access Token](https://github.com/settings/tokens) with **`public_repo` scope only** (classic token) or fine-grained read access to public repos.
 
 ```
 GITHUB_TOKEN=ghp_...
 ```
+
+In GitHub Actions, the workflow passes the built-in `${{ github.token }}` automatically — no extra secret needed for scheduled runs.
 
 ### 4. Webhook (optional)
 
@@ -54,9 +58,10 @@ Set `WEBHOOK_URL` to a Slack incoming webhook or Discord webhook URL. Top 5 lead
 
 ```bash
 python main.py --dry-run
+python main.py --dry-run --debug   # also show score distribution + near-misses
 ```
 
-Prints today's digest to stdout without writing files, touching the database, or sending webhooks.
+Prints today's digest to stdout without writing files, touching the database, or sending webhooks. `--debug` explains why the digest is empty (score distribution, top near-misses at score 2).
 
 ### 6. GitHub Actions secrets
 
@@ -64,7 +69,6 @@ In your repo → **Settings → Secrets and variables → Actions**, add:
 
 | Secret | Value |
 |--------|-------|
-| `GH_SEARCH_TOKEN` | GitHub PAT (optional) |
 | `REDDIT_CLIENT_ID` | Reddit app client ID |
 | `REDDIT_CLIENT_SECRET` | Reddit app secret |
 | `WEBHOOK_URL` | Slack/Discord webhook (optional) |
@@ -77,9 +81,9 @@ Give the workflow **write** permission to push commits (repo Settings → Action
 
 Edit `config/keywords.yaml` to tune search terms without touching code. Three tiers:
 
-- **high_intent** — explicitly seeking help (+3)
-- **pain_venting** — describing the problem (+2)
-- **tool_mentions** — Cursor, Claude, etc. (+1 when combined with above)
+- **intent** — actively looking for help (+3)
+- **pain** — describing a problem (+2)
+- **tools** — AI tool mentions (+1 only when paired with pain or intent)
 
 Items scoring **3+** appear in the digest. Lower scores go to `raw/` for manual review.
 
