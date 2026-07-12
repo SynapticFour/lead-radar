@@ -39,6 +39,7 @@ jobs:
         run: |
           git config user.name "lead-radar-bot"
           git config user.email "bot@localhost"
-          git add digests/ data/seen.db raw/ MANUAL_CHECKLIST.md
+          git add digests/ data/seen.db MANUAL_CHECKLIST.md
+          git add -f raw/ 2>/dev/null || true
           git commit -m "Digest $(date +%F)$( [ '${{ github.event.inputs.reset }}' = 'true' ] && echo ' (reset run)' )" || echo "nothing to commit"
           git push
