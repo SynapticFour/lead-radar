@@ -1,4 +1,5 @@
 """Keyword-based lead scoring."""
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -15,7 +16,12 @@ def load_keywords():
 
 def _match(text, terms):
     t = text.lower()
-    return [term for term in terms if term.lower() in t]
+    hits = []
+    for term in terms:
+        pattern = r"(?<!\w)" + re.escape(term.lower()) + r"(?!\w)"
+        if re.search(pattern, t):
+            hits.append(term)
+    return hits
 
 
 def score_item(item, kw):
@@ -62,5 +68,8 @@ def score_item(item, kw):
     if item["source"] == "github" and not (pain or intent):
         score = max(0, score - 1)
         reasons.append("github weak signal")
+    if item["source"] == "devto" and not (pain or intent):
+        score = max(0, score - 1)
+        reasons.append("devto weak signal")
 
     return score, reasons

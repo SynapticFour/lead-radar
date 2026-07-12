@@ -5,8 +5,9 @@ from pathlib import Path
 
 import requests
 
+from llm_triage import triage as llm_triage
 from scoring import load_keywords, score_item
-from sources import github, hn, reddit
+from sources import devto, github, hn, reddit
 from storage import init_db, is_seen, mark_seen, reset_recent
 
 ROOT = Path(__file__).parent
@@ -24,6 +25,7 @@ def fetch_all(kw):
     items = hn.fetch(terms)
     items.extend(github.fetch())
     items.extend(reddit.fetch(terms))
+    items.extend(devto.fetch())
     return items
 
 
@@ -51,8 +53,8 @@ def format_digest(digest, date):
     by_src = {}
     for item in digest:
         by_src.setdefault(item["source"], []).append(item)
-    labels = {"hn": "Hacker News", "github": "GitHub", "reddit": "Reddit"}
-    for src in ("hn", "reddit", "github"):
+    labels = {"hn": "Hacker News", "github": "GitHub", "reddit": "Reddit", "devto": "dev.to"}
+    for src in ("hn", "reddit", "devto", "github"):
         if src not in by_src:
             continue
         lines += [f"## {labels[src]}", ""]
@@ -128,6 +130,7 @@ def run(dry_run=False, debug=False, reset_days=None):
         print(f"[reset] cleared {n} entries from dedup ledger ({scope})")
     items = fetch_all(kw)
     digest, raw = process(items, kw, persist=not dry_run)
+    digest = llm_triage(digest)
     if debug:
         print_debug(digest, raw)
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")

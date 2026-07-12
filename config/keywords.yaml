@@ -20,7 +20,8 @@ signals:
     - "rewrite from scratch"
     - "mess"
     - "ai slop"
-    - "hallucinat"
+    - "hallucination"
+    - "hallucinated"
     - "duplicate"
     - "duplicated logic"
   intent:

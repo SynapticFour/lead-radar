@@ -9,9 +9,12 @@ A low-maintenance monitoring tool that finds businesses struggling with AI-gener
 | Source | API | Signal strength |
 |--------|-----|-----------------|
 | Hacker News | [Algolia HN API](https://hn.algolia.com/) (free, no key) | Strong |
+| dev.to | [Articles API](https://developers.forem.com/api) (free, no key) | Weak–medium |
 | GitHub | [Code Search API](https://docs.github.com/en/rest/search) (**requires** `GITHUB_TOKEN`) | Weak |
 | Reddit | [Official API](https://www.reddit.com/dev/api/) (OAuth2) | Strong |
 | Upwork / Fiverr | None — see `MANUAL_CHECKLIST.md` | Manual |
+
+**Source setup:** dev.to requires no setup and is active immediately. GitHub and Reddit need their respective credentials — both sources fail silently (return empty) rather than erroring when a key is missing. Check **Settings → Secrets** to see which are configured.
 
 ## 5-minute setup
 
@@ -50,11 +53,19 @@ GITHUB_TOKEN=ghp_...
 
 In GitHub Actions, the workflow passes the built-in `${{ github.token }}` automatically — no extra secret needed for scheduled runs.
 
-### 4. Webhook (optional)
+### 4. LLM triage (optional)
+
+Set `ANTHROPIC_API_KEY` to enable a Claude Haiku pass on digest items only — filters semantic false positives (success stories, general discussion) that keyword scoring can't catch. Without it, numeric scoring is used as-is.
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### 5. Webhook (optional)
 
 Set `WEBHOOK_URL` to a Slack incoming webhook or Discord webhook URL. Top 5 leads are posted after each run.
 
-### 5. Test locally
+### 6. Test locally
 
 ```bash
 python main.py --dry-run
@@ -63,7 +74,7 @@ python main.py --dry-run --debug   # also show score distribution + near-misses
 
 Prints today's digest to stdout without writing files, touching the database, or sending webhooks. `--debug` explains why the digest is empty (score distribution, top near-misses at score 2).
 
-### 6. GitHub Actions secrets
+### 7. GitHub Actions secrets
 
 In your repo → **Settings → Secrets and variables → Actions**, add:
 
@@ -71,6 +82,7 @@ In your repo → **Settings → Secrets and variables → Actions**, add:
 |--------|-------|
 | `REDDIT_CLIENT_ID` | Reddit app client ID |
 | `REDDIT_CLIENT_SECRET` | Reddit app secret |
+| `ANTHROPIC_API_KEY` | Claude API key for LLM triage (optional) |
 | `WEBHOOK_URL` | Slack/Discord webhook (optional) |
 
 The workflow in `.github/workflows/lead-radar.yml` runs daily at 13:00 UTC and commits `digests/`, `data/seen.db`, and `MANUAL_CHECKLIST.md`.
