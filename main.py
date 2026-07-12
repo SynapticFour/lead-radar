@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, json, os
+import argparse, hashlib, json, os, sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -13,6 +13,87 @@ ROOT = Path(__file__).parent
 DIGESTS = ROOT / "digests"
 RAW = ROOT / "raw"
 THRESHOLD = 3
+
+
+def _digest_jsonl(date):
+    return DIGESTS / f"{date}.jsonl"
+
+
+def _triage_state(date):
+    return DIGESTS / f"{date}.triage-state"
+
+
+def _jsonl_hash(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def save_digest_jsonl(digest, date):
+    """Save keyword-scored digest (with full text) for later triage-only runs."""
+    DIGESTS.mkdir(exist_ok=True)
+    with open(_digest_jsonl(date), "w") as f:
+        for item in digest:
+            f.write(json.dumps(item, default=str) + "\n")
+
+
+def load_digest_jsonl(date):
+    path = _digest_jsonl(date)
+    if not path.exists():
+        return None, path
+    items = []
+    with open(path) as f:
+        for line in f:
+            if line.strip():
+                items.append(json.loads(line))
+    return items, path
+
+
+def already_triaged(date, jsonl_path):
+    state = _triage_state(date)
+    return state.exists() and state.read_text().strip() == _jsonl_hash(jsonl_path)
+
+
+def mark_triaged(date, jsonl_path):
+    _triage_state(date).write_text(_jsonl_hash(jsonl_path))
+
+
+def run_triage_only(triage_backend="local", *, force=False):
+    if triage_backend == "none":
+        print("[triage-only] requires --triage local or --triage anthropic")
+        return 1
+
+    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    digest, jsonl_path = load_digest_jsonl(date)
+
+    if digest is None:
+        print(f"[triage-only] no keyword digest at {jsonl_path}")
+        print("[triage-only] run after GitHub Actions commits, or: git pull")
+        return 0
+
+    if not digest:
+        print(f"[triage-only] keyword digest empty for {date} — nothing to triage")
+        return 0
+
+    if not force and already_triaged(date, jsonl_path):
+        md = DIGESTS / f"{date}.md"
+        print(f"[triage-only] already triaged — digest unchanged since last LLM pass")
+        print(f"[triage-only] see {md} (use --force to re-run)")
+        return 0
+
+    n_before = len(digest)
+    print(f"[triage-only] {n_before} keyword leads from {jsonl_path.name}", flush=True)
+
+    if triage_backend == "local":
+        from local_triage import triage as run_triage
+    else:
+        from llm_triage import triage as run_triage
+    digest = run_triage(digest)
+
+    DIGESTS.mkdir(exist_ok=True)
+    md_path = DIGESTS / f"{date}.md"
+    md_path.write_text(format_digest(digest, date))
+    mark_triaged(date, jsonl_path)
+    print(f"[triage-only] wrote {md_path} ({len(digest)}/{n_before} kept after triage)")
+    return 0
 
 
 def all_keywords(kw):
@@ -132,6 +213,13 @@ def run(dry_run=False, debug=False, reset_days=None, triage_backend="none"):
     digest, raw = process(items, kw, persist=not dry_run)
     print(f"[score] {len(digest)} digest items, {len(raw)} below threshold", flush=True)
 
+    if debug:
+        print_debug(digest, raw)
+    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    if not dry_run and digest:
+        save_digest_jsonl(digest, date)
+
     if triage_backend == "local":
         from local_triage import triage as run_triage
         digest = run_triage(digest)
@@ -139,9 +227,6 @@ def run(dry_run=False, debug=False, reset_days=None, triage_backend="none"):
         from llm_triage import triage as run_triage
         digest = run_triage(digest)
 
-    if debug:
-        print_debug(digest, raw)
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     text = format_digest(digest, date)
 
     if dry_run:
@@ -152,6 +237,8 @@ def run(dry_run=False, debug=False, reset_days=None, triage_backend="none"):
     DIGESTS.mkdir(exist_ok=True)
     RAW.mkdir(exist_ok=True)
     (DIGESTS / f"{date}.md").write_text(text)
+    if triage_backend != "none" and digest:
+        mark_triaged(date, _digest_jsonl(date))
     if raw:
         with open(RAW / f"{date}.jsonl", "w") as f:
             for item in raw:
@@ -173,5 +260,12 @@ if __name__ == "__main__":
         "--triage", choices=["none", "local", "anthropic"], default="none",
         help="Optional LLM triage pass: 'local' (Ollama, free) or 'anthropic' (Claude API).",
     )
+    parser.add_argument(
+        "--triage-only", action="store_true",
+        help="LLM-triage existing digests/YYYY-MM-DD.jsonl only — no fetch, no dedup changes.",
+    )
+    parser.add_argument("--force", action="store_true", help="Re-run triage even if digest already triaged")
     args = parser.parse_args()
+    if args.triage_only:
+        sys.exit(run_triage_only(args.triage, force=args.force))
     run(dry_run=args.dry_run, debug=args.debug, reset_days=args.reset_days, triage_backend=args.triage)

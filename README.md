@@ -115,22 +115,30 @@ ollama pull qwen3:8b
 ollama serve   # if not already running as a service
 ```
 
-Then:
+### Daily workflow (GitHub Actions + local LLM)
 
 ```bash
-make local-analysis        # full run with local triage
-make local-analysis-dry    # preview only, no writes
+# 1. GitHub Actions runs daily → keyword digest committed to repo
+# 2. You pull and LLM-filter what Actions already found (no re-fetch):
+make triage-digest
 ```
 
-This runs entirely on your machine — nothing is sent to any external API.
-Swap the model by editing `MODEL` in `local_triage.py` if you have a larger
-model available and want to compare quality (e.g. `qwen3:14b`).
+This pulls latest changes, reads `digests/YYYY-MM-DD.jsonl` (keyword-scored items from Actions), runs Ollama triage, and writes `digests/YYYY-MM-DD.md`. If already up to date and already triaged, it says so and exits.
+
+```bash
+make triage-digest-force   # re-run LLM even if already triaged
+make local-analysis-dry    # full fetch + triage preview (no writes)
+```
+
+`make triage-digest` runs entirely on your machine for the LLM step — nothing is sent to an external API.
+Swap the model by editing `MODEL` in `local_triage.py` (e.g. `qwen3:14b`).
 
 ## Output
 
 ```
-digests/YYYY-MM-DD.md   # daily digest, grouped by source, sorted by score
-raw/YYYY-MM-DD.jsonl    # below-threshold items for tuning
+digests/YYYY-MM-DD.md      # human-readable report (keyword or LLM-triaged)
+digests/YYYY-MM-DD.jsonl   # keyword-scored items with full text (for triage-only)
+raw/YYYY-MM-DD.jsonl       # below-threshold items for tuning
 MANUAL_CHECKLIST.md     # Upwork/Fiverr/showcase links (regenerated each run)
 data/seen.db            # dedup ledger (IDs only, never deleted)
 ```
