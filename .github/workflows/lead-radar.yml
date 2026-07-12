@@ -1,0 +1,29 @@
+name: Lead Radar
+on:
+  schedule:
+    - cron: '0 13 * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: python main.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_SEARCH_TOKEN }}
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+      - name: Commit digest
+        run: |
+          git config user.name "lead-radar-bot"
+          git config user.email "bot@localhost"
+          git add digests/ data/seen.db MANUAL_CHECKLIST.md
+          git commit -m "Daily digest $(date +%F)" || echo "nothing to commit"
+          git push

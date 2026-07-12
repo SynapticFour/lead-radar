@@ -1,0 +1,20 @@
+signals:
+  high_intent:
+    - "need help fixing vibe coded"
+    - "hire developer fix cursor"
+    - "AI generated codebase rescue"
+    - "technical debt AI generated"
+  pain_venting:
+    - "cursor broke my codebase"
+    - "claude code wrote"
+    - "vibe coding technical debt"
+    - "AI generated code nobody understands"
+    - "codebase unmaintainable"
+  tool_mentions:
+    - "cursor"
+    - "claude code"
+    - "windsurf"
+    - "lovable"
+    - "bolt.new"
+    - "replit agent"
+    - "v0.dev"
