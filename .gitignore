@@ -1,5 +1,6 @@
 .env
 raw/
+.ollama.pid
 digests/*.triage-state
 __pycache__/
 *.pyc

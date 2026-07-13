@@ -1,6 +1,33 @@
 PYTHON ?= python3
+WITH_OLLAMA := ./scripts/with-ollama.sh
 
-.PHONY: install run dry-run local-analysis local-analysis-dry reset-today reset-all triage-digest triage-digest-force
+.DEFAULT_GOAL := help
+
+.PHONY: help install run dry-run pull triage-digest triage-digest-force \
+        local-analysis local-analysis-dry reset-today reset-all
+
+help:
+	@echo "Lead Radar — verfügbare Befehle:"
+	@echo ""
+	@echo "  Täglicher Workflow:"
+	@echo "    make triage-digest        git pull + LLM-Triage (Ollama start/stop automatisch)"
+	@echo "    make triage-digest-force  wie oben, erzwingt erneute Triage"
+	@echo ""
+	@echo "  Vollständiger Lauf (fetch + score, lokal):"
+	@echo "    make run                  keyword-Digest schreiben"
+	@echo "    make dry-run              preview, keine Dateien"
+	@echo "    make local-analysis       fetch + score + LLM-Triage"
+	@echo "    make local-analysis-dry   preview mit LLM-Triage"
+	@echo ""
+	@echo "  Nach Scoring-/Config-Änderung:"
+	@echo "    make reset-today          ledger (1 Tag) leeren + fetch + LLM"
+	@echo "    make reset-all            gesamtes ledger leeren + fetch + LLM"
+	@echo ""
+	@echo "  Setup:"
+	@echo "    make install              pip install -r requirements.txt"
+	@echo ""
+	@echo "  Ollama (für triage-* / local-* / reset-*):"
+	@echo "    ollama pull qwen3:8b      einmalig, Modell laden"
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -11,8 +38,7 @@ run:
 dry-run:
 	$(PYTHON) main.py --dry-run
 
-## Pull latest keyword digest from GitHub, then LLM-triage it (no re-fetch)
-triage-digest:
+pull:
 	@echo "Pulling latest keyword digest from GitHub..."
 	@git fetch origin main
 	@if [ "$$(git rev-parse HEAD)" = "$$(git rev-parse origin/main)" ]; then \
@@ -20,29 +46,22 @@ triage-digest:
 	else \
 		git pull --ff-only origin main && echo "[pull] updated"; \
 	fi
-	@echo "LLM triage on keyword digest only (ollama serve must be running)..."
-	$(PYTHON) main.py --triage-only --triage local
 
-triage-digest-force:
-	@git fetch origin main
-	@if [ "$$(git rev-parse HEAD)" != "$$(git rev-parse origin/main)" ]; then \
-		git pull --ff-only origin main; \
-	fi
-	$(PYTHON) main.py --triage-only --triage local --force
+triage-digest: pull
+	@echo "LLM triage on keyword digest only..."
+	$(WITH_OLLAMA) $(PYTHON) main.py --triage-only --triage local
 
-## Run with local Ollama triage (qwen3:8b). Requires: ollama serve, ollama pull qwen3:8b
+triage-digest-force: pull
+	$(WITH_OLLAMA) $(PYTHON) main.py --triage-only --triage local --force
+
 local-analysis:
-	@echo "Using local Ollama triage — make sure 'ollama serve' is running."
-	$(PYTHON) main.py --triage local
+	$(WITH_OLLAMA) $(PYTHON) main.py --triage local
 
 local-analysis-dry:
-	@echo "Using local Ollama triage (dry run, no writes/commits) — make sure 'ollama serve' is running."
-	$(PYTHON) main.py --dry-run --triage local
+	$(WITH_OLLAMA) $(PYTHON) main.py --dry-run --triage local
 
-## Re-evaluate everything seen today with local triage (useful right after a scoring/config change)
 reset-today:
-	$(PYTHON) main.py --reset-days 1 --triage local
+	$(WITH_OLLAMA) $(PYTHON) main.py --reset-days 1 --triage local
 
-## Re-evaluate the entire ledger with local triage
 reset-all:
-	$(PYTHON) main.py --reset-days 0 --triage local
+	$(WITH_OLLAMA) $(PYTHON) main.py --reset-days 0 --triage local
