@@ -31,11 +31,14 @@ jobs:
           fi
           python main.py $ARGS
         env:
+          # Optional PAT (code search); github.py falls back to GITHUB_TOKEN.
+          LEAD_RADAR_GITHUB_TOKEN: ${{ secrets.LEAD_RADAR_GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
           REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
           REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CONTACT_EMAIL: contact@synapticfour.com
       - name: Commit digest
         run: |
           git config user.name "lead-radar-bot"

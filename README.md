@@ -6,15 +6,15 @@ A low-maintenance monitoring tool that finds businesses struggling with AI-gener
 
 ## What it checks
 
-| Source | API | Signal strength |
-|--------|-----|-----------------|
-| Hacker News | [Algolia HN API](https://hn.algolia.com/) (free, no key) | Strong |
-| dev.to | [Articles API](https://developers.forem.com/api) (free, no key) | Weak–medium |
-| GitHub | [Code Search API](https://docs.github.com/en/rest/search) (**requires** `GITHUB_TOKEN`) | Weak |
-| Reddit | [Official API](https://www.reddit.com/dev/api/) (OAuth2) | Strong |
-| Upwork / Fiverr | None — see `MANUAL_CHECKLIST.md` | Manual |
+| Source | API | Signal strength | Notes |
+|--------|-----|-----------------|-------|
+| Hacker News | [Algolia HN API](https://hn.algolia.com/) (free, no key) | Strong | Primary source today |
+| Reddit | [Official API](https://www.reddit.com/dev/api/) (OAuth2) | Strong | Skipped with a log line if secrets missing |
+| GitHub | [Code Search API](https://docs.github.com/en/rest/search) (**requires** token) | Weak | Scores README + description; needs intent or pain+tool |
+| dev.to | [Articles API](https://developers.forem.com/api) (free, no key) | Weak | Same weak-source gate as GitHub |
+| Upwork / Fiverr | None — see `MANUAL_CHECKLIST.md` | Manual | |
 
-**Source setup:** dev.to requires no setup and is active immediately. GitHub and Reddit need their respective credentials — both sources fail silently (return empty) rather than erroring when a key is missing. Check **Settings → Secrets** to see which are configured.
+Missing credentials **log a clear skip message** (they no longer fail silently without a trace).
 
 ## 5-minute setup
 
@@ -27,120 +27,90 @@ pip install -r requirements.txt
 cp .env.example .env   # edit CONTACT_EMAIL at minimum
 ```
 
-### 2. Register a Reddit script app (~2 min)
+### 2. GitHub token (required for GitHub source)
+
+Code search has **no unauthenticated access**. Your local `gh` session must be valid:
+
+```bash
+gh auth login -h github.com -s repo
+./scripts/set-github-token.sh   # writes .env + Actions secret LEAD_RADAR_GITHUB_TOKEN
+```
+
+Or create a [classic PAT](https://github.com/settings/tokens) with `public_repo` and put `GITHUB_TOKEN=ghp_...` in `.env`.
+
+In Actions, the job token is always available as a fallback; a PAT in `LEAD_RADAR_GITHUB_TOKEN` is preferred for reliable code search.
+
+### 3. Reddit script app (recommended)
 
 1. Log in to Reddit → [prefs/apps](https://www.reddit.com/prefs/apps)
-2. Click **create another app…**
-3. Choose **script**, name it `LeadRadar`, redirect URI `http://localhost:8080`
-4. Copy the **client ID** (under the app name) and **secret**
-5. Add to `.env`:
-   ```
-   REDDIT_CLIENT_ID=your_id
-   REDDIT_CLIENT_SECRET=your_secret
-   ```
+2. **create another app…** → type **script**, name `LeadRadar`, redirect `http://localhost:8080`
+3. Put client ID + secret in `.env` and as Actions secrets `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET`
 
-Reddit is optional — the tool skips it silently if credentials are missing.
-
-### 3. GitHub token (required for GitHub source)
-
-The GitHub source uses `/search/code`, which **has no unauthenticated access** — without `GITHUB_TOKEN`, GitHub is skipped entirely (like Reddit without credentials).
-
-Create a [Personal Access Token](https://github.com/settings/tokens) with **`public_repo` scope only** (classic token) or fine-grained read access to public repos.
-
-```
-GITHUB_TOKEN=ghp_...
-```
-
-In GitHub Actions, the workflow passes the built-in `${{ github.token }}` automatically — no extra secret needed for scheduled runs.
+Without Reddit credentials the source is skipped (logged).
 
 ### 4. LLM triage (optional)
 
-Filter semantic false positives on digest items only (not all raw hits):
-
 ```bash
 python main.py --triage anthropic   # Claude Haiku — requires ANTHROPIC_API_KEY
-python main.py --triage local       # Ollama — free, see "Local triage" below
+python main.py --triage local       # Ollama — free
 ```
 
-Without `--triage`, numeric scoring is used as-is (default for GitHub Actions).
-
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
+Actions runs **keyword scoring only** (`--triage` default `none`). Local triage overwrites `.md` from the committed `.jsonl`.
 
 ### 5. Webhook (optional)
 
-Set `WEBHOOK_URL` to a Slack incoming webhook or Discord webhook URL. Top 5 leads are posted after each run.
+Set `WEBHOOK_URL` for Slack/Discord top-5 alerts.
 
 ### 6. Test locally
 
 ```bash
-python main.py --dry-run
-python main.py --dry-run --debug   # also show score distribution + near-misses
+python main.py --dry-run --debug
+make test
 ```
-
-Prints today's digest to stdout without writing files, touching the database, or sending webhooks. `--debug` explains why the digest is empty (score distribution, top near-misses at score 2).
 
 ### 7. GitHub Actions secrets
 
-In your repo → **Settings → Secrets and variables → Actions**, add:
-
 | Secret | Value |
 |--------|-------|
+| `LEAD_RADAR_GITHUB_TOKEN` | PAT for code search (optional; job token is fallback) |
 | `REDDIT_CLIENT_ID` | Reddit app client ID |
 | `REDDIT_CLIENT_SECRET` | Reddit app secret |
-| `ANTHROPIC_API_KEY` | Claude API key for LLM triage (optional) |
+| `ANTHROPIC_API_KEY` | Claude API key (optional; unused unless you change the workflow) |
 | `WEBHOOK_URL` | Slack/Discord webhook (optional) |
 
-The workflow in `.github/workflows/lead-radar.yml` runs daily at 13:00 UTC and commits `digests/`, `data/seen.db`, and `MANUAL_CHECKLIST.md`.
+Workflow: daily 13:00 UTC → commits `digests/`, `data/seen.db`, `MANUAL_CHECKLIST.md`, `raw/`.
 
-Give the workflow **write** permission to push commits (repo Settings → Actions → General → Workflow permissions → Read and write).
+## Scoring
 
-## Configuration
+Edit `config/keywords.yaml`. Three tiers:
 
-Edit `config/keywords.yaml` to tune search terms without touching code. Three tiers:
+- **intent** — looking for help (+3) — phrases, not bare `hire` / `audit`
+- **pain** — problem language (+2) — not bare `mess` / `duplicate`
+- **tools** — AI coding tools (+1) — `vibe coding`, `cursor ide`, not bare `cursor`
 
-- **intent** — actively looking for help (+3)
-- **pain** — describing a problem (+2)
-- **tools** — AI tool mentions (+1 only when paired with pain or intent)
+Needs **2+ categories**. Digest threshold is **4** (so tools+pain alone = 3 stays in `raw/` unless boosted). GitHub/dev.to also require intent **or** pain+tool.
 
-Items scoring **3+** appear in the digest. Lower scores go to `raw/` for manual review.
-
-## Local triage (free, no API key)
-
-Requires [Ollama](https://ollama.com) running locally with a model pulled:
+## Local triage
 
 ```bash
 ollama pull qwen3:8b
-ollama serve   # if not already running as a service
+make triage-digest              # today (UTC)
+make triage-digest DAYS=7       # last week
+make triage-digest DATE=2026-07-30
+make triage-week                # alias for DAYS=7
+make triage-digest-force DAYS=7
 ```
 
-### Daily workflow (GitHub Actions + local LLM)
-
-```bash
-# 1. GitHub Actions runs daily → keyword digest committed to repo
-# 2. You pull and LLM-filter what Actions already found (no re-fetch):
-make triage-digest
-```
-
-This pulls latest changes, reads `digests/YYYY-MM-DD.jsonl` (keyword-scored items from Actions), runs Ollama triage, and writes `digests/YYYY-MM-DD.md`. If already up to date and already triaged, it says so and exits.
-
-```bash
-make triage-digest-force   # re-run LLM even if already triaged
-make local-analysis-dry    # full fetch + triage preview (no writes)
-```
-
-`make triage-digest` runs entirely on your machine for the LLM step — nothing is sent to an external API.
-Swap the model by editing `MODEL` in `local_triage.py` (e.g. `qwen3:14b`).
+`make triage-digest` pulls, then LLM-filters existing `digests/*.jsonl` — it does **not** re-fetch APIs.
 
 ## Output
 
 ```
-digests/YYYY-MM-DD.md      # human-readable report (keyword or LLM-triaged)
-digests/YYYY-MM-DD.jsonl   # keyword-scored items with full text (for triage-only)
+digests/YYYY-MM-DD.md      # human-readable (keyword and/or LLM-triaged)
+digests/YYYY-MM-DD.jsonl   # keyword-scored items with full text
 raw/YYYY-MM-DD.jsonl       # below-threshold items for tuning
-MANUAL_CHECKLIST.md     # Upwork/Fiverr/showcase links (regenerated each run)
-data/seen.db            # dedup ledger (IDs only, never deleted)
+MANUAL_CHECKLIST.md
+data/seen.db               # dedup ledger (IDs; clearable via --reset-days)
 ```
 
 ## Ethics & constraints
