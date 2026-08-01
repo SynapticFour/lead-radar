@@ -55,7 +55,9 @@ python main.py --triage anthropic   # Claude Haiku — requires ANTHROPIC_API_KE
 python main.py --triage local       # Ollama — free
 ```
 
-Actions runs **keyword scoring only** (`--triage` default `none`). Local triage overwrites `.md` from the committed `.jsonl`.
+**GitHub Actions** runs keyword scoring and, when `ANTHROPIC_API_KEY` is set, **Claude Haiku triage** in the same job (`--triage anthropic`) — same role as local `make triage-digest`, without Ollama. Keyword `.jsonl` is still saved pre-triage so you can re-run locally with Ollama if you want.
+
+Local Ollama triage remains optional for offline/week backfills (`make triage-digest DAYS=7`).
 
 ### 5. Webhook (optional)
 
@@ -75,7 +77,7 @@ make test
 | `LEAD_RADAR_GITHUB_TOKEN` | PAT for code search (optional; job token is fallback) |
 | `REDDIT_CLIENT_ID` | Reddit app client ID |
 | `REDDIT_CLIENT_SECRET` | Reddit app secret |
-| `ANTHROPIC_API_KEY` | Claude API key (optional; unused unless you change the workflow) |
+| `ANTHROPIC_API_KEY` | Claude API key — enables Haiku triage on each daily Actions run |
 | `WEBHOOK_URL` | Slack/Discord webhook (optional) |
 
 Workflow: daily 13:00 UTC → commits `digests/`, `data/seen.db`, `MANUAL_CHECKLIST.md`, `raw/`.

@@ -29,6 +29,15 @@ jobs:
           if [ "${{ github.event.inputs.reset }}" = "true" ]; then
             ARGS="--reset-days ${{ github.event.inputs.reset_days || '1' }}"
           fi
+          # Claude Haiku triage when ANTHROPIC_API_KEY is set (same role as local
+          # `make triage-digest`, without Ollama). Keyword .jsonl is still saved
+          # pre-triage for optional local re-runs.
+          if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+            ARGS="$ARGS --triage anthropic"
+            echo "[ci] LLM triage enabled (anthropic)"
+          else
+            echo "[ci] ANTHROPIC_API_KEY unset — keyword digest only (no LLM triage)"
+          fi
           python main.py $ARGS
         env:
           # Optional PAT (code search); github.py falls back to GITHUB_TOKEN.

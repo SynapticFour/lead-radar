@@ -2,6 +2,7 @@
 judgment, to catch cases keyword matching structurally can't: success stories,
 sarcasm, discussion-not-distress, etc. Runs only on items that already cleared
 the numeric threshold, to keep API cost minimal. Skips silently without a key."""
+
 import json
 import os
 
@@ -23,10 +24,19 @@ Respond with strict JSON only, nothing else: {{"is_lead": true or false, "reason
 def triage(items):
     key = os.environ.get("ANTHROPIC_API_KEY")
     if not key:
+        print(
+            "[triage] ANTHROPIC_API_KEY unset — keeping keyword digest as-is",
+            flush=True,
+        )
         return items
 
     kept = []
-    for item in items:
+    total = len(items)
+    if total:
+        print(f"[triage] screening {total} digest items via {MODEL}...", flush=True)
+    for i, item in enumerate(items, 1):
+        title = (item.get("title") or "")[:60]
+        print(f"[triage {i}/{total}] {title}", flush=True)
         text = (item.get("text") or item.get("title") or "")[:1500]
         try:
             r = requests.post(
@@ -56,4 +66,6 @@ def triage(items):
         if is_lead:
             item["reasons"].append(f"llm confirmed: {item['llm_reason']}")
             kept.append(item)
+    if total:
+        print(f"[triage] done — {len(kept)}/{total} kept", flush=True)
     return kept
