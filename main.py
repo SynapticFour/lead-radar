@@ -89,6 +89,7 @@ def _triage_one_date(date, triage_backend, *, force=False):
     if triage_backend == "local":
         from local_triage import triage as run_triage
     else:
+        # cloud / anthropic (alias)
         from llm_triage import triage as run_triage
     digest = run_triage(digest)
 
@@ -102,7 +103,7 @@ def _triage_one_date(date, triage_backend, *, force=False):
 
 def run_triage_only(triage_backend="local", *, force=False, date=None, days=1):
     if triage_backend == "none":
-        print("[triage-only] requires --triage local or --triage anthropic")
+        print("[triage-only] requires --triage local or --triage cloud")
         return 1
 
     if date:
@@ -268,7 +269,7 @@ def run(dry_run=False, debug=False, reset_days=None, triage_backend="none"):
         from local_triage import triage as run_triage
 
         digest = run_triage(digest)
-    elif triage_backend == "anthropic":
+    elif triage_backend in ("cloud", "anthropic"):
         from llm_triage import triage as run_triage
 
         digest = run_triage(digest)
@@ -319,9 +320,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--triage",
-        choices=["none", "local", "anthropic"],
+        choices=["none", "local", "cloud", "anthropic"],
         default="none",
-        help="Optional LLM triage pass: 'local' (Ollama, free) or 'anthropic' (Claude API).",
+        help=(
+            "Optional LLM triage: 'local' (Ollama), 'cloud' (Gemini→Groq→Cerebras, "
+            "same keys as SIE; 'anthropic' is an alias for cloud)."
+        ),
     )
     parser.add_argument(
         "--triage-only",

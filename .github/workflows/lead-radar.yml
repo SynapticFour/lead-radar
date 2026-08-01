@@ -29,14 +29,14 @@ jobs:
           if [ "${{ github.event.inputs.reset }}" = "true" ]; then
             ARGS="--reset-days ${{ github.event.inputs.reset_days || '1' }}"
           fi
-          # Claude Haiku triage when ANTHROPIC_API_KEY is set (same role as local
-          # `make triage-digest`, without Ollama). Keyword .jsonl is still saved
-          # pre-triage for optional local re-runs.
-          if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
-            ARGS="$ARGS --triage anthropic"
-            echo "[ci] LLM triage enabled (anthropic)"
+          # Cloud LLM triage (Gemini → Groq → Cerebras), same role as local
+          # `make triage-digest` / SIE keys — no Ollama. Keyword .jsonl still
+          # saved pre-triage for optional local re-runs.
+          if [ -n "${GEMINI_API_KEY:-}${GROQ_API_KEY:-}${CEREBRAS_API_KEY:-}${ANTHROPIC_API_KEY:-}" ]; then
+            ARGS="$ARGS --triage cloud"
+            echo "[ci] LLM triage enabled (cloud: gemini/groq/cerebras)"
           else
-            echo "[ci] ANTHROPIC_API_KEY unset — keyword digest only (no LLM triage)"
+            echo "[ci] no cloud LLM keys — keyword digest only"
           fi
           python main.py $ARGS
         env:
@@ -46,6 +46,9 @@ jobs:
           REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
           REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CONTACT_EMAIL: contact@synapticfour.com
       - name: Commit digest

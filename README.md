@@ -51,13 +51,13 @@ Without Reddit credentials the source is skipped (logged).
 ### 4. LLM triage (optional)
 
 ```bash
-python main.py --triage anthropic   # Claude Haiku — requires ANTHROPIC_API_KEY
-python main.py --triage local       # Ollama — free
+python main.py --triage cloud    # Gemini → Groq → Cerebras (SIE keys); no Ollama
+python main.py --triage local    # Ollama on your machine
 ```
 
-**GitHub Actions** runs keyword scoring and, when `ANTHROPIC_API_KEY` is set, **Claude Haiku triage** in the same job (`--triage anthropic`) — same role as local `make triage-digest`, without Ollama. Keyword `.jsonl` is still saved pre-triage so you can re-run locally with Ollama if you want.
+**Local `make triage-digest`** still uses **Ollama** (`--triage local`). That is not the same as SIE’s cloud stack.
 
-Local Ollama triage remains optional for offline/week backfills (`make triage-digest DAYS=7`).
+**GitHub Actions** uses **`--triage cloud`** when any of `GEMINI_API_KEY` / `GROQ_API_KEY` / `CEREBRAS_API_KEY` is set (same providers/keys as synaptic-intelligence-engine). Keyword `.jsonl` is still saved pre-triage.
 
 ### 5. Webhook (optional)
 
@@ -77,8 +77,12 @@ make test
 | `LEAD_RADAR_GITHUB_TOKEN` | PAT for code search (optional; job token is fallback) |
 | `REDDIT_CLIENT_ID` | Reddit app client ID |
 | `REDDIT_CLIENT_SECRET` | Reddit app secret |
-| `ANTHROPIC_API_KEY` | Claude API key — enables Haiku triage on each daily Actions run |
+| `GEMINI_API_KEY` | Preferred cloud triage (SIE) |
+| `GROQ_API_KEY` | Fallback cloud triage |
+| `CEREBRAS_API_KEY` | Fallback cloud triage |
 | `WEBHOOK_URL` | Slack/Discord webhook (optional) |
+
+Copy keys from SIE without printing: `./scripts/sync-llm-secrets-from-sie.sh`
 
 Workflow: daily 13:00 UTC → commits `digests/`, `data/seen.db`, `MANUAL_CHECKLIST.md`, `raw/`.
 
