@@ -1,5 +1,5 @@
 # Manual Checklist
-_Generated 2026-07-30_
+_Generated 2026-08-01_
 
 Platforms without public APIs — review manually (~2 min):
 
