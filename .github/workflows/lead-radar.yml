@@ -1,7 +1,10 @@
 name: Lead Radar
 on:
   schedule:
-    - cron: '0 13 * * *'
+    # Gemini RPD resets at midnight Pacific; run 30m earlier to use remaining
+    # (or near-fresh) daily quota. Timezone-aware so DST stays correct.
+    - cron: '30 23 * * *'
+      timezone: America/Los_Angeles
   workflow_dispatch:
     inputs:
       reset:

@@ -84,7 +84,9 @@ make test
 
 Copy keys from SIE without printing: `./scripts/sync-llm-secrets-from-sie.sh`
 
-Workflow: daily 13:00 UTC → commits `digests/`, `data/seen.db`, `MANUAL_CHECKLIST.md`, `raw/`.
+Workflow: daily **23:30 America/Los_Angeles** (30 minutes before Gemini’s midnight-PT RPD reset) → commits `digests/`, `data/seen.db`, `MANUAL_CHECKLIST.md`, `raw/`.
+
+**Where to read each day’s result:** the committed file [`digests/YYYY-MM-DD.md`](digests/) on `main` (also visible in the bot commit “Digest YYYY-MM-DD” and under [Actions → Lead Radar](https://github.com/SynapticFour/lead-radar/actions)). Full scored rows: `digests/YYYY-MM-DD.jsonl`.
 
 ## Scoring
 
