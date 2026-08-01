@@ -153,4 +153,6 @@ data/seen.db            # dedup ledger (IDs only, never deleted)
 
 ## License
 
+MIT — see [LICENSE](LICENSE).
+
 Personal research tool — use responsibly and in accordance with each platform's Terms of Service.
