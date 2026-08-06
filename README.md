@@ -88,6 +88,14 @@ Workflow: daily **23:30 America/Los_Angeles** (30 minutes before Gemini’s midn
 
 **Where to read each day’s result:** the committed file [`digests/YYYY-MM-DD.md`](digests/) on `main` (also visible in the bot commit “Digest YYYY-MM-DD” and under [Actions → Lead Radar](https://github.com/SynapticFour/lead-radar/actions)). Full scored rows: `digests/YYYY-MM-DD.jsonl`.
 
+Locally (read-only from `origin/main`, does not modify the working tree):
+
+```bash
+make view                 # latest UTC day
+make view 5               # last 5 UTC days
+make view DATE=2026-08-01 # one day
+```
+
 ## Scoring
 
 Edit `config/keywords.yaml`. Three tiers:

@@ -2,14 +2,31 @@ PYTHON ?= python3
 WITH_OLLAMA := ./scripts/with-ollama.sh
 DAYS ?= 1
 DATE ?=
+VIEW_DAYS := $(DAYS)
+
+# Support: make view 5  (positional days; also: make view DAYS=5 / DATE=YYYY-MM-DD)
+ifeq (view,$(firstword $(MAKECMDGOALS)))
+  _view_arg := $(word 2,$(MAKECMDGOALS))
+  ifneq (,$(_view_arg))
+    VIEW_DAYS := $(_view_arg)
+$(_view_arg):
+	@:
+  endif
+endif
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install run dry-run pull triage-digest triage-digest-force \
+.PHONY: help install run dry-run pull view triage-digest triage-digest-force \
         triage-week local-analysis local-analysis-dry reset-today reset-all test
 
 help:
 	@echo "Lead Radar — verfügbare Befehle:"
+	@echo ""
+	@echo "  Resultate ansehen (read-only, von origin/main):"
+	@echo "    make view                 neuester Digest (heute UTC)"
+	@echo "    make view 5               letzte 5 UTC-Tage"
+	@echo "    make view DAYS=7          gleiche Syntax wie triage-digest"
+	@echo "    make view DATE=YYYY-MM-DD einen Tag"
 	@echo ""
 	@echo "  Täglicher Workflow:"
 	@echo "    make triage-digest              git pull + LLM-Triage (heute, UTC)"
@@ -58,6 +75,14 @@ pull:
 	else \
 		git pull --ff-only origin main && echo "[pull] updated"; \
 	fi
+
+# Read-only: git fetch + show digests from origin/main (never writes into digests/)
+view:
+ifneq ($(DATE),)
+	@./scripts/view-digests.sh --date $(DATE)
+else
+	@./scripts/view-digests.sh $(VIEW_DAYS)
+endif
 
 # DATE= takes precedence over DAYS=
 TRIAGE_ARGS := --triage-only --triage local
